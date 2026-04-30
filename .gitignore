@@ -2,4 +2,8 @@ data/
 __pycache__/
 *.pyc
 .DS_Store
+<<<<<<< HEAD
+=======
+*.egg-info/
+>>>>>>> 2f7ee623795e08618be180335190b4dd97824c3c
 .ipynb_checkpoints/
