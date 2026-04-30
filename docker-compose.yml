@@ -1,0 +1,103 @@
+# MediStream Telehealth — Stage 1: Data Lake Foundation
+# HDFS cluster using professor's proven images
+
+services:
+
+  namenode:
+    image: tcsmith314/hadoop-namenode-python311:latest
+    container_name: hadoop-namenode
+    hostname: namenode
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    environment:
+      - CLUSTER_NAME=medistream
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - CORE_CONF_hadoop_http_staticuser_user=root
+      - HDFS_CONF_dfs_namenode_name_dir=file:///hadoop/dfs/name
+      - HDFS_CONF_dfs_permissions_enabled=false
+      - HDFS_CONF_dfs_webhdfs_enabled=true
+      - HDFS_CONF_dfs_replication=2
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+      - ./data:/data
+      - ./hdfs-init:/hdfs-init
+    networks:
+      - medistream-network
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  datanode1:
+    image: tcsmith314/hadoop-datanode-python311:latest
+    container_name: hadoop-datanode1
+    hostname: datanode1
+    ports:
+      - "9864:9864"
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - CORE_CONF_hadoop_http_staticuser_user=root
+      - HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
+      - HDFS_CONF_dfs_permissions_enabled=false
+    volumes:
+      - datanode1_data:/hadoop/dfs/data
+    networks:
+      - medistream-network
+    mem_limit: 1g
+    depends_on:
+      namenode:
+        condition: service_healthy
+
+  datanode2:
+    image: tcsmith314/hadoop-datanode-python311:latest
+    container_name: hadoop-datanode2
+    hostname: datanode2
+    ports:
+      - "9865:9864"
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - CORE_CONF_hadoop_http_staticuser_user=root
+      - HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
+      - HDFS_CONF_dfs_permissions_enabled=false
+    volumes:
+      - datanode2_data:/hadoop/dfs/data
+    networks:
+      - medistream-network
+    mem_limit: 1g
+    depends_on:
+      namenode:
+        condition: service_healthy
+
+  datanode3:
+    image: tcsmith314/hadoop-datanode-python311:latest
+    container_name: hadoop-datanode3
+    hostname: datanode3
+    ports:
+      - "9866:9864"
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - CORE_CONF_hadoop_http_staticuser_user=root
+      - HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
+      - HDFS_CONF_dfs_permissions_enabled=false
+    volumes:
+      - datanode3_data:/hadoop/dfs/data
+    networks:
+      - medistream-network
+    mem_limit: 1g
+    depends_on:
+      namenode:
+        condition: service_healthy
+
+networks:
+  medistream-network:
+    driver: bridge
+
+volumes:
+  namenode_data:
+  datanode1_data:
+  datanode2_data:
+  datanode3_data:
