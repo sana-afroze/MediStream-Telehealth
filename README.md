@@ -3,15 +3,15 @@
 
 ## Team
 - Stage 1: HDFS Data Lake — @sana-afroze
-- Stage 2: Spark Batch Transformation — TBD
+- Stage 2: Spark Batch Transformation — @svela
 - Stage 3: Kafka Streaming — TBD
 - Stage 4: Airflow Orchestration — TBD
 
 ## Quick Start
 
 ### Prerequisites
-- Docker Desktop running
-- Data files (get from course repo or teammate)
+- Docker Desktop running (16 GB RAM recommended)
+- Data files (get from course data repo)
 
 ### 1. Clone the repo
 ```bash
@@ -21,16 +21,20 @@ cd MediStream-Telehealth
 
 ### 2. Add data files
 Place these 5 files into the `data/` folder:
+```
 appointments.csv.gz
 patient-vitals.json.gz
 session-quality.csv.gz
 patient-feedback.json.gz
 physician-schedule.csv.gz
-### 3. Start HDFS cluster
+```
+Download from: `https://github.com/prof-tcsmith/6562S26-data/tree/main/final-projects/04-medistream-telehealth/`
+
+### 3. Start the full stack (HDFS + Spark)
 ```bash
 docker compose up -d
 ```
-Wait 60 seconds for all containers to be healthy.
+Wait ~60 seconds for HDFS, then ~30 more seconds for Spark.
 
 ### 4. Create HDFS zones
 ```bash
@@ -48,21 +52,53 @@ hdfs dfs -put /data/physician-schedule.csv.gz /medistream/landing/physician_sche
 "
 ```
 
-### 6. Verify
-- HDFS UI: http://localhost:9870
-- Check Datanodes tab — should show 3 datanodes
+### 6. Run Stage 2 — Spark Transforms
+1. Open Jupyter: http://localhost:8888?token=spark
+2. Navigate to `notebooks/02-spark-transforms.ipynb`
+3. Run all cells in order
+
+### 7. Verify
+| Service | URL |
+|---|---|
+| HDFS UI | http://localhost:9870 |
+| Spark Master UI | http://localhost:8080 |
+| Spark App UI | http://localhost:4040 (while job runs) |
+| Jupyter | http://localhost:8888?token=spark |
 
 ## Project Structure
+```
 MediStream-Telehealth/
-├── data/                  ← data files (not committed to git)
-├── hdfs-init/             ← HDFS zone creation script
-│   └── create-zones.sh
-├── notebooks/             ← Jupyter notebooks (Stage 2)
-├── spark/
-│   └── jobs/              ← Spark Python scripts (Stage 2)
-├── scripts/               ← helper scripts
-├── docker-compose.yml     ← HDFS cluster setup
+├── data/                       ← data files (not committed to git)
+├── docker/
+│   └── Dockerfile.spark        ← custom Spark image (uid-aligned)
+├── hdfs-init/
+│   └── create-zones.sh         ← HDFS zone creation script
+├── notebooks/
+│   └── 02-spark-transforms.ipynb  ← Stage 2 PySpark notebook
+├── docker-compose.yml          ← HDFS + Spark cluster setup
+├── hadoop.env
 └── .gitignore
+```
+
+## Architecture
+```
+┌─────────────────────────────────────────────┐
+│  HDFS Data Lake (Stage 1)                   │
+│  ┌─────────┐  ┌─────────┐  ┌───────────┐   │
+│  │ Landing │→ │ Curated │→ │ Analytics │   │
+│  │ (raw)   │  │ (clean) │  │ (agg)     │   │
+│  └─────────┘  └─────────┘  └───────────┘   │
+│       ↑              ↕              ↕        │
+│  Load data     PySpark reads/writes          │
+└─────────────────────────────────────────────┘
+         ↕
+┌─────────────────────────────────────────────┐
+│  Spark Cluster (Stage 2)                    │
+│  Master → Worker 1 (2 cores, 2 GB)         │
+│         → Worker 2 (2 cores, 2 GB)         │
+│  Jupyter (PySpark Driver)                   │
+└─────────────────────────────────────────────┘
+```
 
 ## Windows Users
 - Use WSL2 terminal for all commands
