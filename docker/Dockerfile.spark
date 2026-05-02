@@ -19,8 +19,13 @@ USER root
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates curl && \
-    curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-py311_25.1.1-2-Linux-x86_64.sh \
-         -o /tmp/miniconda.sh && \
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ]; then \
+      MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py311_25.1.1-2-Linux-aarch64.sh"; \
+    else \
+      MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py311_25.1.1-2-Linux-x86_64.sh"; \
+    fi && \
+    curl -fsSL "$MINICONDA_URL" -o /tmp/miniconda.sh && \
     bash /tmp/miniconda.sh -b -p /opt/miniconda && \
     rm /tmp/miniconda.sh && \
     /opt/miniconda/bin/conda clean -afy && \
