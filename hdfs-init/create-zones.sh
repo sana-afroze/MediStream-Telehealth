@@ -25,6 +25,12 @@ hdfs dfs -mkdir -p /medistream/analytics/physician_perf
 hdfs dfs -mkdir -p /medistream/analytics/session_quality_agg
 hdfs dfs -mkdir -p /medistream/analytics/utilization_rates
 hdfs dfs -mkdir -p /medistream/analytics/patient_journey
+# Stage 2 follow-up tables (rubric completion)
+hdfs dfs -mkdir -p /medistream/analytics/no_show_breakdown
+hdfs dfs -mkdir -p /medistream/analytics/quality_by_device_os
+hdfs dfs -mkdir -p /medistream/analytics/patient_history_scores
+hdfs dfs -mkdir -p /medistream/analytics/physician_quality_adjusted_volume
+hdfs dfs -mkdir -p /medistream/analytics/degraded_sessions
 hdfs dfs -setrep -R 1 /medistream/analytics
 
 # Permissions for all team members
