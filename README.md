@@ -83,29 +83,52 @@ Detailed walkthroughs live in [`docs/stage3/`](docs/stage3/).
 ## Project Structure
 ```
 MediStream-Telehealth/
-├── data/                                ← data files (not committed to git)
+├── data/                                  ← data files (not committed to git)
 ├── docker/
-│   └── Dockerfile.spark                 ← custom Spark image (uid-aligned)
+│   └── Dockerfile.spark                   ← custom Spark image (uid-aligned)
 ├── hdfs-init/
-│   └── create-zones.sh                  ← HDFS zone creation script
+│   └── create-zones.sh                    ← HDFS zone creation script
 ├── kafka-init/
-│   └── create-topics.sh                 ← Kafka topic creation script (Stage 3)
+│   └── create-topics.sh                   ← Kafka topic creation script (Stage 3)
 ├── notebooks/
-│   ├── 02-spark-transforms.ipynb        ← Stage 2 base pipeline
-│   ├── 03a-streaming-producer.ipynb     ← Stage 3 producer (replays session-quality)
-│   ├── 03b-streaming-consumer.ipynb     ← Stage 3 windowed alert consumer
-│   └── 03c-streaming-health-check.ipynb ← Stage 3 end-to-end verification
+│   ├── 02-spark-transforms.ipynb          ← Stage 2 base pipeline
+│   ├── 02b-no-show-breakdown.ipynb        ← Stage 2 follow-up: Q1 no-show breakdown
+│   ├── 02c-quality-by-device-os.ipynb     ← Stage 2 follow-up: Q7 platform reliability
+│   ├── 02d-derived-features.ipynb         ← Stage 2 follow-up: history score + QAV
+│   ├── 02e-degraded-sessions.ipynb        ← Stage 2 follow-up: degraded session flags
+│   ├── 02f-repartition-curated.ipynb      ← Stage 2 follow-up: partition curated tables
+│   ├── 02g-followup-health-check.ipynb    ← Stage 2 post-flight check
+│   ├── 03-stage3-readiness.ipynb          ← Stage 3 integration guide (read-only)
+│   ├── 03a-streaming-producer.ipynb       ← Stage 3 producer (replays session-quality)
+│   ├── 03b-streaming-consumer.ipynb       ← Stage 3 windowed alert consumer
+│   └── 03c-streaming-health-check.ipynb   ← Stage 3 end-to-end verification
 ├── docs/
-│   └── stage3/                          ← Stage 3 design + walkthrough docs
+│   └── stage3/                            ← Stage 3 design + walkthrough docs
 │       ├── README.md
 │       ├── architecture.md
 │       ├── producer.md
 │       ├── consumer.md
 │       └── todos.md
-├── docker-compose.yml                   ← HDFS + Spark + Kafka cluster setup
+├── docker-compose.yml                     ← HDFS + Spark + Kafka cluster setup
 ├── hadoop.env
 └── .gitignore
 ```
+
+## Stage 2 Follow-ups
+
+The base `02-spark-transforms.ipynb` covers the joins and high-level aggregations. Five additional notebooks (prefixed `02b`–`02f`) close gaps against the final-project brief and the rubric. **Run order:** base notebook → `02f` (one-time repartition) → `02b`–`02e` (analytics tables) in any order.
+
+| Notebook | Output table | Partition | Brief reference |
+|---|---|---|---|
+| `02b-no-show-breakdown` | `analytics/no_show_breakdown` | `specialty` | Q1 — no-show prediction by specialty × time-of-day × day-of-week × visit_type |
+| `02c-quality-by-device-os` | `analytics/quality_by_device_os` | `device_type` | Q7 — platform reliability, device + OS recommendations |
+| `02d-derived-features` | `analytics/patient_history_scores`, `analytics/physician_quality_adjusted_volume` | `engagement_tier`, none | Stage 2 derived features: history score + rating-weighted volume |
+| `02e-degraded-sessions` | `analytics/degraded_sessions` | `degraded_severity` | Stage 2 derived feature: batch view of session degradation (Stage 3 will compute the streaming view) |
+| `02f-repartition-curated` | rewrites `curated/{appointments,session_quality,patient_vitals}` | per Stage 1 partitioning hints | Stage 1 partitioning hints from the brief |
+
+**Quality thresholds** are kept consistent across batch (`02c`, `02e`) and the upcoming Stage 3 streaming alerts: `latency_ms > 500`, `packet_loss_pct > 5`, `audio_quality_score < 5`.
+
+After running the follow-ups, run `02g-followup-health-check.ipynb` to verify every expected curated and analytics table exists with the right schema. `03-stage3-readiness.ipynb` documents what data Stage 3 will consume from Stages 1 + 2 (dimension tables, baseline lookups, alert envelope schema) — it is not the Stage 3 implementation.
 
 ## Architecture
 ```
