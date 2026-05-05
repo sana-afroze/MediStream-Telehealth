@@ -258,7 +258,10 @@ services:
   # Airflow — Stage 4
   # ===========================
   airflow:
-    image: apache/airflow:2.9.0
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.airflow
+    image: medistream/airflow:2.9.0-kafka
     container_name: medistream-airflow
     hostname: airflow
     ports:

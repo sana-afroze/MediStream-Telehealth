@@ -1,0 +1,4 @@
+FROM apache/airflow:2.9.0
+
+# Add Python deps used by the medistream DAGs (Kafka health/lag checks)
+RUN pip install --no-cache-dir kafka-python-ng==2.2.3
