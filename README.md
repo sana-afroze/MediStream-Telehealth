@@ -4,7 +4,7 @@
 ## Team
 - Stage 1: HDFS Data Lake — @sana-afroze
 - Stage 2: Spark Batch Transformation — @svela
-- Stage 3: Kafka Streaming — TBD
+- Stage 3: Kafka Streaming — @Harshxth
 - Stage 4: Airflow Orchestration — TBD
 
 ## Quick Start
@@ -28,13 +28,13 @@ session-quality.csv.gz
 patient-feedback.json.gz
 physician-schedule.csv.gz
 ```
-Download from: `https://github.com/prof-tcsmith/6562S26-data/tree/main/final-projects/04-medistream-telehealth/`
+Download from: `https://github.com/prof-tcsmith/ism6562s26-class/tree/main/final-projects/data/04-medistream-telehealth/`
 
-### 3. Start the full stack (HDFS + Spark)
+### 3. Start the full stack
 ```bash
 docker compose up -d
 ```
-Wait ~60 seconds for HDFS, then ~30 more seconds for Spark.
+Wait ~60s for HDFS, ~30s for Spark, ~20s for Kafka.
 
 ### 4. Create HDFS zones
 ```bash
@@ -54,50 +54,53 @@ hdfs dfs -put /data/physician-schedule.csv.gz /medistream/landing/physician_sche
 
 ### 6. Run Stage 2 — Spark Transforms
 1. Open Jupyter: http://localhost:8888?token=spark
-2. Navigate to `notebooks/02-spark-transforms.ipynb`
-3. Run all cells in order
+2. Run `notebooks/02-spark-transforms.ipynb`
+3. Run `02b`–`02g` for additional analytics tables
 
-### 7. Verify
+### 7. Create Kafka topics (Stage 3)
+```bash
+docker exec -it medistream-kafka bash /kafka-init/create-topics.sh
+```
+
+### 8. Run Stage 3 — Streaming
+1. Open `notebooks/03b-streaming-consumer.ipynb`, run all cells (it will block at `awaitTermination`)
+2. In another tab, open `notebooks/03a-streaming-producer.ipynb`, run all cells
+3. Watch the consumer for `[batch N] emitting M alert rows`
+4. Run `notebooks/03c-streaming-health-check.ipynb` to verify
+
+### Verify
 | Service | URL |
 |---|---|
 | HDFS UI | http://localhost:9870 |
 | Spark Master UI | http://localhost:8080 |
 | Spark App UI | http://localhost:4040 (while job runs) |
 | Jupyter | http://localhost:8888?token=spark |
+| Kafka | localhost:9092 |
 
 ## Project Structure
 ```
 MediStream-Telehealth/
-├── data/                       ← data files (not committed to git)
+├── data/                                ← data files (not committed to git)
 ├── docker/
-│   └── Dockerfile.spark        ← custom Spark image (uid-aligned)
+│   └── Dockerfile.spark                 ← custom Spark image
 ├── hdfs-init/
-│   └── create-zones.sh         ← HDFS zone creation script
+│   └── create-zones.sh                  ← HDFS zone creation
+├── kafka-init/
+│   └── create-topics.sh                 ← Kafka topic creation
 ├── notebooks/
-│   └── 02-spark-transforms.ipynb  ← Stage 2 PySpark notebook
-├── docker-compose.yml          ← HDFS + Spark cluster setup
+│   ├── 02-spark-transforms.ipynb        ← Stage 2 base pipeline
+│   ├── 02b-no-show-breakdown.ipynb      ← no-show breakdown
+│   ├── 02c-quality-by-device-os.ipynb   ← quality by device/OS
+│   ├── 02d-derived-features.ipynb       ← history score + QAV
+│   ├── 02e-degraded-sessions.ipynb      ← degraded sessions
+│   ├── 02f-repartition-curated.ipynb    ← repartition curated tables
+│   ├── 02g-followup-health-check.ipynb  ← Stage 2 health check
+│   ├── 03a-streaming-producer.ipynb     ← Stage 3 producer
+│   ├── 03b-streaming-consumer.ipynb     ← Stage 3 consumer
+│   └── 03c-streaming-health-check.ipynb ← Stage 3 health check
+├── docker-compose.yml
 ├── hadoop.env
 └── .gitignore
-```
-
-## Architecture
-```
-┌─────────────────────────────────────────────┐
-│  HDFS Data Lake (Stage 1)                   │
-│  ┌─────────┐  ┌─────────┐  ┌───────────┐   │
-│  │ Landing │→ │ Curated │→ │ Analytics │   │
-│  │ (raw)   │  │ (clean) │  │ (agg)     │   │
-│  └─────────┘  └─────────┘  └───────────┘   │
-│       ↑              ↕              ↕        │
-│  Load data     PySpark reads/writes          │
-└─────────────────────────────────────────────┘
-         ↕
-┌─────────────────────────────────────────────┐
-│  Spark Cluster (Stage 2)                    │
-│  Master → Worker 1 (2 cores, 2 GB)         │
-│         → Worker 2 (2 cores, 2 GB)         │
-│  Jupyter (PySpark Driver)                   │
-└─────────────────────────────────────────────┘
 ```
 
 ## Windows Users

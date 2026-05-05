@@ -1,16 +1,18 @@
-# MediStream Telehealth — Stage 1 + Stage 2
-# HDFS Data Lake + Spark Batch Transformation Pipeline
+# MediStream Telehealth — Stage 1 + Stage 2 + Stage 3
+# HDFS Data Lake + Spark Batch Transformation + Kafka Streaming
 #
 # Stage 1: HDFS cluster (namenode + 3 datanodes)
 # Stage 2: Spark cluster (master + 2 workers + Jupyter PySpark notebook)
+# Stage 3: Kafka broker + Zookeeper for real-time session-quality streaming
 #
 # Usage:
 #   docker compose up -d
-#   Wait ~60s for HDFS, then ~30s more for Spark
+#   Wait ~60s for HDFS, then ~30s more for Spark, then ~20s for Kafka
 #   HDFS UI:       http://localhost:9870
 #   Spark Master:  http://localhost:8080
 #   Jupyter:       http://localhost:8888?token=spark
 #   Spark App UI:  http://localhost:4040 (active only while a job runs)
+#   Kafka:         localhost:9092 (broker), localhost:2181 (zookeeper)
 
 services:
 
@@ -209,6 +211,48 @@ services:
       spark-master:
         condition: service_healthy
 
+  # ===========================
+  # Kafka — Stage 3
+  # ===========================
+
+  # Apache Kafka in KRaft mode — single container, no Zookeeper.
+  # Bitnami images moved off Docker Hub in late 2025; using the official
+  # apache/kafka image which is freely available.
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: medistream-kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"   # external listener (host -> broker)
+      - "9093:9093"   # internal listener (compose network -> broker)
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:9093,EXTERNAL://:9092,CONTROLLER://:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9093,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_NUM_PARTITIONS: 4
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_DIRS: /tmp/kafka-logs
+      CLUSTER_ID: medistream-kraft-cluster
+    volumes:
+      - kafka_data:/tmp/kafka-logs
+      - ./kafka-init:/kafka-init
+    networks:
+      - medistream-network
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9093 >/dev/null 2>&1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
 networks:
   medistream-network:
     driver: bridge
@@ -221,3 +265,4 @@ volumes:
   spark-worker-1-data:
   spark-worker-2-data:
   jupyter-data:
+  kafka_data:
