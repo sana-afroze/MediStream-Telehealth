@@ -91,6 +91,9 @@ MediStream-Telehealth/
 ├── data/                                ← data files (not committed to git)
 ├── docker/
 │   └── Dockerfile.spark                 ← custom Spark image
+├── dags/                        
+│   ├── batch_pipeline.py        ← Stage 4: Orchestration & Quality Gates
+│   └── streaming_monitor.py     ← Stage 4: Infrastructure monitoring
 ├── hdfs-init/
 │   └── create-zones.sh                  ← HDFS zone creation
 ├── kafka-init/
