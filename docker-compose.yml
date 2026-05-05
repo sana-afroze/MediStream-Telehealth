@@ -240,6 +240,7 @@ services:
       KAFKA_LOG_RETENTION_HOURS: 24
       KAFKA_LOG_DIRS: /tmp/kafka-logs
       CLUSTER_ID: medistream-kraft-cluster
+    user: "0:0"
     volumes:
       - kafka_data:/tmp/kafka-logs
       - ./kafka-init:/kafka-init
@@ -252,6 +253,37 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  # ===========================
+  # Airflow — Stage 4
+  # ===========================
+  airflow:
+    image: apache/airflow:2.9.0
+    container_name: medistream-airflow
+    hostname: airflow
+    ports:
+      - "8090:8080"   # Airflow web UI (8080 is taken by Spark Master)
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=False
+      - _AIRFLOW_DB_MIGRATE=true
+      - _AIRFLOW_WWW_USER_CREATE=true
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - airflow_data:/opt/airflow
+    command: standalone
+    networks:
+      - medistream-network
+    mem_limit: 1500m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
 networks:
   medistream-network:
@@ -266,3 +298,4 @@ volumes:
   spark-worker-2-data:
   jupyter-data:
   kafka_data:
+  airflow_data:
