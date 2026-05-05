@@ -5,7 +5,7 @@
 - Stage 1: HDFS Data Lake — @sana-afroze
 - Stage 2: Spark Batch Transformation — @svela
 - Stage 3: Kafka Streaming — @Harshxth
-- Stage 4: Airflow Orchestration — @SheikhRobinEmon *(Batch Pipeline & Streaming Monitor)*
+- Stage 4: Airflow Orchestration — @SheikhRobinEmon
 
 ## Quick Start
 
