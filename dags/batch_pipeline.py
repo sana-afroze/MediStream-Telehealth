@@ -1,16 +1,20 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from datetime import timedelta
 
-# REQUIREMENT: Retry logic
+# REQUIREMENT: Retry logic, SLAs, and Alerting
 default_args = {
     'owner': 'medistream_team',
     'depends_on_past': False,
     'start_date': days_ago(1),
     'retries': 2,
     'retry_delay': timedelta(minutes=5),
+    
+    'email_on_failure': True,                  # Failure alerting
+    'email_on_retry': False,
+    'email': ['admin@medistream-telehealth.com'], # Alert destination
+    'sla': timedelta(hours=2),                 # Service Level Agreement (SLA)
 }
 
 # REQUIREMENT: Scheduled DAG
