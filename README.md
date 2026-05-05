@@ -5,7 +5,7 @@
 - Stage 1: HDFS Data Lake — @sana-afroze
 - Stage 2: Spark Batch Transformation — @svela
 - Stage 3: Kafka Streaming — @Harshxth
-- Stage 4: Airflow Orchestration — TBD
+- Stage 4: Airflow Orchestration — @SheikhRobinEmon *(Batch Pipeline & Streaming Monitor)*
 
 ## Quick Start
 
@@ -68,6 +68,13 @@ docker exec -it medistream-kafka bash /kafka-init/create-topics.sh
 3. Watch the consumer for `[batch N] emitting M alert rows`
 4. Run `notebooks/03c-streaming-health-check.ipynb` to verify
 
+### 9. Run Stage 4 — Airflow Orchestration
+1. Open Airflow UI: http://localhost:8080 (Default credentials: `airflow` / `airflow`)
+2. Locate the two MediStream DAGs:
+   - `medistream_batch_pipeline`: Handles daily Spark transformations with Data Quality Gates.
+   - `medistream_streaming_health_monitor`: Runs hourly checks on Kafka and Spark Structured Streaming.
+3. Unpause both DAGs to begin orchestration.
+
 ### Verify
 | Service | URL |
 |---|---|
@@ -76,6 +83,7 @@ docker exec -it medistream-kafka bash /kafka-init/create-topics.sh
 | Spark App UI | http://localhost:4040 (while job runs) |
 | Jupyter | http://localhost:8888?token=spark |
 | Kafka | localhost:9092 |
+| Airflow UI | http://localhost:8080
 
 ## Project Structure
 ```
