@@ -53,10 +53,12 @@ Wait ~60s for HDFS, ~30s for Spark, ~20s for Kafka, ~60s for Airflow.
 
 ## Stage 1 — HDFS
 
-Create zones and load raw data:
+Create zones and load raw data and set replication:
 
 ```bash
 docker exec -it hadoop-namenode bash /hdfs-init/create-zones.sh
+
+# Load all 5 raw datasets into the landing zone
 
 docker exec -it hadoop-namenode bash -c "
 hdfs dfs -put -f /data/appointments.csv.gz       /medistream/landing/appointments/
@@ -65,10 +67,24 @@ hdfs dfs -put -f /data/session-quality.csv.gz    /medistream/landing/session_qua
 hdfs dfs -put -f /data/patient-feedback.json.gz  /medistream/landing/patient_feedback/
 hdfs dfs -put -f /data/physician-schedule.csv.gz /medistream/landing/physician_schedule/
 "
+
+# Set replication factor 3 on landing zone (HIPAA-sensitive patient data)
+docker exec -it hadoop-namenode bash -c "hdfs dfs -setrep -R 3 /medistream/landing"
 ```
 
-Browse HDFS at http://localhost:9870 — files should appear in `/medistream/landing/`.
+Zone replication strategy:
+| Zone | Replication | Reason |
+|------|-------------|--------|
+| landing/ | 3 | Raw HIPAA-sensitive data — maximum protection |
+| curated/ | 2 | Cleaned Parquet — recoverable from landing |
+| analytics/ | 1 | Derived tables — always rebuildable |
 
+Browse HDFS at http://localhost:9870 — files should appear in `/medistream/landing/`
+
+Open Jupyter at http://localhost:8888
+
+`01-hdfs-foundation.ipynb` — Stage 1: verify HDFS zones, confirm file loading, check replication factors via WebHDFS.
+   
 ## Stage 2 — Spark Batch Transforms
 
 Open Jupyter at http://localhost:8888?token=spark and run notebooks in order:
@@ -135,6 +151,7 @@ MediStream-Telehealth/
 ├── kafka-init/
 │   └── create-topics.sh                   ← Kafka topic creation
 ├── notebooks/
+│   ├── 01-hdfs-foundation.ipynb           ← Stage 1 verification notebook
 │   ├── 02-spark-transforms.ipynb          ← Stage 2 main pipeline
 │   ├── 02b-no-show-breakdown.ipynb
 │   ├── 02c-quality-by-device-os.ipynb
