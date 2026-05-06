@@ -7,7 +7,7 @@ End-to-end data platform for the MediStream telehealth scenario: HDFS data lake,
 - Stage 1: HDFS Data Lake — @sana-afroze
 - Stage 2: Spark Batch Transformation — @svela
 - Stage 3: Kafka Streaming — @Harshxth
-- Stage 4: Airflow Orchestration — @SheikhRobinEmon
+- Stage 4: Airflow Orchestration — @SheikhRobinEmon-USF
 
 ## Prerequisites
 
